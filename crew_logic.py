@@ -28,6 +28,7 @@ def initialize_llm():
     # CrewAI has deep integrations with OpenAI for tracing, evaluation, and internal reasoning
     # checks. We completely hijack the OpenAI base url here and point it strictly to Groq's
     # OpenAI-compatible endpoint. This solves all "Incorrect API key" errors.
+    os.environ["OPENAI_BASE_URL"] = "https://api.groq.com/openai/v1"
     os.environ["OPENAI_API_BASE"] = "https://api.groq.com/openai/v1"
     os.environ["OPENAI_MODEL_NAME"] = "llama-3.3-70b-versatile"
     os.environ["OPENAI_API_KEY"] = api_key
