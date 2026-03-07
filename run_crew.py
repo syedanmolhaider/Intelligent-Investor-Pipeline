@@ -79,6 +79,7 @@ def create_and_run_crew(asset_or_fund: str):
         agents=[graham_analyst, macro_expert, risk_skeptic, cio],
         tasks=[task_quant, task_macro, task_risk, task_cio],
         process=Process.sequential,
+        manager_llm=llm, # <--- THIS FIXES THE OPENAI KEY ERROR
         verbose=True
     )
 
