@@ -79,66 +79,63 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.markdown("<h1 class='main-header'>The Intelligent Investor AI</h1>", unsafe_allow_html=True)
-st.markdown("<p class='sub-header'>Benjamin Graham Value Investing Engine for the Pakistan Market (CrewAI + Groq)</p>", unsafe_allow_html=True)
+st.markdown("<p class='sub-header'>Benjamin Graham Value Investing Engine for the Pakistan Market (Langchain + Groq LLM)</p>", unsafe_allow_html=True)
 
-# ----------------- CORE LOGIC -----------------
-# 1. Input Section
-user_query = st.text_input("Enter PSX Ticker (e.g., MEBL.KA) or MUFAP Fund Name:", placeholder="MEBL.KA")
+# ----------------- CHAT UI / MEMORY SETUP -----------------
+# Initialize chat history memory
+if "messages" not in st.session_state:
+    st.session_state.messages = [
+        {"role": "assistant", "content": "Welcome to **OmniCortex**, your elite quantitative AI for the Pakistan Market.\n\nAsk me anything! For example:\n- *What are the current metrics for MEBL.KA?*\n- *Any latest news on the State Bank of Pakistan?*\n- *What is the margin of safety for Mutual Fund X?*"}
+    ]
 
-@st.cache_data(ttl=3600)
-def fetch_bq_data(identifier: str):
-    client = bigquery.Client()
-    if ".KA" in identifier.upper():
-        query = f"SELECT * FROM `pk-market-data.market_data.graham_metrics_equities` WHERE Ticker = '{identifier.upper()}' ORDER BY Date DESC LIMIT 1"
-    else:
-        query = f"SELECT * FROM `pk-market-data.market_data.mufap_performance_metrics` WHERE Fund_Name LIKE '%{identifier}%' ORDER BY Date DESC LIMIT 1"
-    
-    return client.query(query).to_dataframe()
+# Display chat messages from history on app rerun
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-if user_query:
-    with st.spinner("Fetching pre-computed Graham SQL metrics from BigQuery..."):
-        try:
-            df = fetch_bq_data(user_query)
-            if df.empty:
-                st.error("No metrics found in BigQuery. Please verify the ticker or fund name.")
-            else:
-                st.markdown("### 📊 Raw Pre-Calculated Quantitative Metrics")
-                st.dataframe(df, use_container_width=True)
+# ----------------- CONVERSATIONAL AI BRAIN -----------------
+# Lazy load the brain
+@st.cache_resource
+def load_brain():
+    from core_brain import get_omnicortex_brain
+    return get_omnicortex_brain()
+
+# React to user input
+if prompt := st.chat_input("Talk with OmniCortex... (e.g. Analyze HUBC.KA)"):
+    # Display user message in chat message container
+    st.chat_message("user").markdown(prompt)
+    # Add user message to chat history
+    st.session_state.messages.append({"role": "user", "content": prompt})
+
+    # Display assistant response in chat message container
+    with st.chat_message("assistant"):
+        with st.spinner("OmniCortex is thinking (and checking exact SQL/News data)..."):
+            try:
+                brain = load_brain()
                 
-                # Check if we should trigger the AI
-                if st.button("🧠 Analyze with Multi-Agent AI (CIO & Analyst)", type="primary"):
-                    
-                    st.markdown("### 💬 The Investment Committee Debate")
-                    crew_expander = st.expander("Live Agent Thought Process & Real-Time Research", expanded=True)
-                    
-                    with crew_expander:
-                        st.info("Initializing Llama 3 via Groq... Running multi-agent orchestration.")
-                        try:
-                            from run_crew import create_and_run_crew
-                            
-                            # Capture stdout (print statements) to show in UI
-                            f = io.StringIO()
-                            with redirect_stdout(f):
-                                final_verdict = create_and_run_crew(user_query)
-                            
-                            log_output = f.getvalue()
-                            st.text_area("Agent Output Logs", log_output, height=400)
-                            
-                        except ImportError as e:
-                            logger.error("Missing libraries: %s", e)
-                            st.error(f"Dependencies error: {e}")
-                            st.warning("Note: When deployed to Streamlit Community Cloud, this will execute successfully from requirements.txt.")
-                            final_verdict = "VERDICT UNAVAILABLE due to local Python missing CrewAI dependencies."
-                        except Exception as e:
-                            error_trace = traceback.format_exc()
-                            logger.error("AI Assistant crashed with traceback:\n%s", error_trace)
-                            st.error(f"Execution Error: {e}")
-                            st.markdown(f"**Detailed AI Logger:**\n```python\n{error_trace}\n```")
-                            final_verdict = "ERROR OCCURRED DURING ANALYSIS."
-                            
-                    st.markdown("### 🎯 Chief Investment Officer (CIO) Final Verdict")
-                    st.markdown(f"<div class='cio-verdict'>{final_verdict}</div>", unsafe_allow_html=True)
-                            
-        except Exception as e:
-            logger.exception("Database query failed:")
-            st.error(f"Database connection error: {e}")
+                # We need to pass the conversation history properly
+                from langchain_core.messages import HumanMessage, AIMessage
+                chat_history = []
+                for msg in st.session_state.messages[:-1]: # Don't include the immediate prompt, it's passed as 'input'
+                    if msg["role"] == "user":
+                        chat_history.append(HumanMessage(content=msg["content"]))
+                    elif msg["role"] == "assistant":
+                        chat_history.append(AIMessage(content=msg["content"]))
+                
+                # Fetch the intelligent response from Langchain core
+                response = brain.invoke(
+                    {"input": prompt, "chat_history": chat_history}
+                )
+                
+                ai_reply = response["output"]
+                st.markdown(ai_reply)
+                
+                # Add assistant response to chat history
+                st.session_state.messages.append({"role": "assistant", "content": ai_reply})
+                
+            except Exception as e:
+                error_trace = traceback.format_exc()
+                logger.error("OmniCortex crashed with traceback:\n%s", error_trace)
+                st.error(f"Execution Error: {str(e)}")
+                st.markdown(f"**Detailed AI Logger:**\n```python\n{error_trace}\n```")
+

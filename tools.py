@@ -1,6 +1,6 @@
 import os
 from google.cloud import bigquery
-from crewai.tools import tool
+from langchain.tools import tool
 from duckduckgo_search import DDGS
 
 # Ensure BigQuery matches the required auth
