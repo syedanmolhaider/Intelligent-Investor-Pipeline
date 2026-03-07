@@ -34,7 +34,7 @@ TOOLS_SCHEMA = [
                 "properties": {
                     "search_query": {
                         "type": "string",
-                        "description": "A clear, specific search query (e.g. 'KSE 100 index closing Friday March 7 2026', 'State Bank Pakistan interest rate today')"
+                        "description": "A clear, specific search query (e.g. 'KSE 100 index closing Friday March 6', 'State Bank Pakistan interest rate today')"
                     }
                 },
                 "required": ["search_query"]
@@ -147,4 +147,5 @@ def sanitize_tool_output(raw_output: str) -> str:
         return raw_output
         
     # Strip markdown
-   # clean_text = re.sub(r'
+    clean_text = re.sub(r'
+http://googleusercontent.com/immersive_entry_chip/0
