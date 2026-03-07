@@ -1,0 +1,11 @@
+pandas
+google-cloud-bigquery
+db-dtypes
+yfinance
+cloudscraper
+html5lib
+lxml
+crewai
+langchain-groq
+duckduckgo-search
+streamlit
