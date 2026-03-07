@@ -37,49 +37,87 @@ st.set_page_config(page_title="Intelligent Investor AI", layout="wide", initial_
 
 st.markdown("""
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    /* Pure dark mode background */
     .stApp {
-        background-color: #0d1117;
-        color: #c9d1d9;
+        background-color: #0b0f19 !important;
+        color: #e6edf3 !important;
+        font-family: 'Inter', sans-serif !important;
     }
-    .main-header {
+    
+    /* Clean Minimal Header */
+    .omni-header {
         font-family: 'Inter', sans-serif;
-        background: -webkit-linear-gradient(45deg, #FFD700, #FFA500);
+        font-size: 2.8rem;
+        font-weight: 700;
+        text-align: center;
+        background: -webkit-linear-gradient(45deg, #4da8da, #007cc7);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-size: 3.5rem;
-        font-weight: 800;
-        text-align: center;
-        margin-bottom: 0;
-        padding-top: 2rem;
+        margin-top: 2rem;
+        margin-bottom: 0px;
+        letter-spacing: -1px;
     }
-    .sub-header {
+    
+    .omni-subheader {
         font-family: 'Inter', sans-serif;
-        color: #8b949e;
+        color: #6e7681;
         text-align: center;
-        margin-bottom: 3rem;
-        font-size: 1.2rem;
+        margin-bottom: 4rem;
+        font-size: 1.1rem;
+        font-weight: 400;
     }
-    .cio-verdict {
-        font-size: 1.5rem;
-        font-weight: bold;
-        padding: 20px;
-        border-radius: 10px;
-        background: rgba(46, 160, 67, 0.1);
-        border: 1px solid #2ea043;
-        color: #3fb950;
-        text-align: center;
-        margin-top: 20px;
-        margin-bottom: 2rem;
+
+    /* ---------------- SLEEK AI CHAT STYLING ---------------- */
+    /* Remove all box borders and hard backgrounds for a fluid, continuous chat interface */
+    [data-testid="stChatMessageContent"] {
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        padding-top: 0.2rem !important;
     }
-    .dataframe {
-        border-radius: 8px;
-        overflow: hidden;
+    
+    /* Subtle separation between messages */
+    [data-testid="stChatMessage"] {
+        padding: 1.5rem 0 !important;
+        border-bottom: 1px solid rgba(255,255,255, 0.05);
+    }
+    
+    /* Beautiful Typography for the chat text */
+    .stChatMessage .stMarkdown p {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 1.25rem !important; /* Huge readability boost */
+        line-height: 1.75 !important;
+        color: #ECECEC !important;
+        font-weight: 400 !important;
+    }
+    
+    .stChatMessage .stMarkdown li {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 1.2rem !important;
+        line-height: 1.7 !important;
+        color: #D4D4D4 !important;
+        margin-bottom: 0.6rem;
+    }
+    
+    .stChatMessage .stMarkdown strong {
+        color: #FFFFFF !important;
+        font-weight: 600 !important;
+    }
+    
+    /* Chat Input Bar Styling */
+    [data-testid="stChatInput"] {
+        border-radius: 20px !important;
+        border: 1px solid #30363d !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("<h1 class='main-header'>The Intelligent Investor AI</h1>", unsafe_allow_html=True)
-st.markdown("<p class='sub-header'>Benjamin Graham Value Investing Engine for the Pakistan Market (Langchain + Groq LLM)</p>", unsafe_allow_html=True)
+st.markdown("<h1 class='omni-header'>OmniCortex AI</h1>", unsafe_allow_html=True)
+st.markdown("<p class='omni-subheader'>Advanced Quantitative Analysis Engine</p>", unsafe_allow_html=True)
 
 # ----------------- CHAT UI / MEMORY SETUP -----------------
 # Initialize chat history memory
