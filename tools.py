@@ -7,7 +7,7 @@ from duckduckgo_search import DDGS
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "bq-key.json"
 bq_client = bigquery.Client()
 
-@tool("Fetch SQL Metrics from BigQuery")
+@tool
 def fetch_sql_metrics(asset_identifier: str) -> str:
     """
     Useful for fetching pre-computed Benjamin Graham and performance metrics for a specific asset.
@@ -53,7 +53,7 @@ def fetch_sql_metrics(asset_identifier: str) -> str:
     except Exception as e:
         return f"Database Query Failed: {str(e)}"
 
-@tool("Search Live News via DuckDuckGo")
+@tool
 def search_live_news(search_query: str) -> str:
     """
     Useful for finding LIVE news, global oil prices, or Pakistani macro-economic indicators (like State Bank of Pakistan interest rates, IMF bailouts).
