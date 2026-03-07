@@ -147,4 +147,4 @@ def sanitize_tool_output(raw_output: str) -> str:
         return raw_output
         
     # Strip markdown
-    clean_text = re.sub(r'
+   # clean_text = re.sub(r'
