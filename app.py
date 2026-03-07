@@ -5,6 +5,15 @@ import io
 from contextlib import redirect_stdout
 from google.cloud import bigquery
 import pandas as pd
+import logging
+import traceback
+
+# Setup detailed logging for the user's AI assistant
+logging.basicConfig(
+    level=logging.ERROR,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger("CrewAIAssistant")
 
 # ----------------- AUTHENTICATION HANDLING -----------------
 # For Streamlit Community Cloud Deployment
@@ -116,15 +125,20 @@ if user_query:
                             st.text_area("Agent Output Logs", log_output, height=400)
                             
                         except ImportError as e:
+                            logger.error("Missing libraries: %s", e)
                             st.error(f"Dependencies error: {e}")
                             st.warning("Note: When deployed to Streamlit Community Cloud, this will execute successfully from requirements.txt.")
                             final_verdict = "VERDICT UNAVAILABLE due to local Python missing CrewAI dependencies."
                         except Exception as e:
+                            error_trace = traceback.format_exc()
+                            logger.error("AI Assistant crashed with traceback:\n%s", error_trace)
                             st.error(f"Execution Error: {e}")
+                            st.markdown(f"**Detailed AI Logger:**\n```python\n{error_trace}\n```")
                             final_verdict = "ERROR OCCURRED DURING ANALYSIS."
                             
                     st.markdown("### 🎯 Chief Investment Officer (CIO) Final Verdict")
                     st.markdown(f"<div class='cio-verdict'>{final_verdict}</div>", unsafe_allow_html=True)
                             
         except Exception as e:
+            logger.exception("Database query failed:")
             st.error(f"Database connection error: {e}")
