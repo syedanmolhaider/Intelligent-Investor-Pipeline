@@ -1,5 +1,6 @@
 import os
 import json
+import re
 from groq import Groq
 from google.cloud import bigquery
 from duckduckgo_search import DDGS
@@ -50,8 +51,7 @@ def execute_fetch_sql_metrics(asset_identifier: str) -> str:
     
     if ".KA" in asset_identifier.upper():
         query = f"""
-            SELECT * 
-            FROM `pk-market-data.market_data.graham_metrics_equities`
+            SELECT * FROM `pk-market-data.market_data.graham_metrics_equities`
             WHERE Ticker = '{asset_identifier.upper()}'
             ORDER BY Date DESC
             LIMIT 1
@@ -59,8 +59,7 @@ def execute_fetch_sql_metrics(asset_identifier: str) -> str:
         asset_type = "Equities"
     else:
         query = f"""
-            SELECT * 
-            FROM `pk-market-data.market_data.mufap_performance_metrics`
+            SELECT * FROM `pk-market-data.market_data.mufap_performance_metrics`
             WHERE Fund_Name LIKE '%{asset_identifier}%'
             ORDER BY Date DESC
             LIMIT 1
@@ -131,120 +130,20 @@ If the user asks a general question, just answer conversationally. Be concise, h
 3. Use bullet points heavily.
 4. Use **bolding** to highlight key data points and numbers.
 5. Use line breaks aggressively to ensure the text breathes.
+
+**CRITICAL INSTRUCTIONS FOR TOOL CALLING (SYSTEM LEVEL WARNING):**
+1. You are a strict JSON-only routing processor. 
+2. If you need to use a tool, you MUST use the native tool-calling schema provided by the API.
+3. DO NOT wrap your tool calls in XML tags like <function> or <tool_call>.
+4. DO NOT wrap your output in markdown formatting like ```json.
+5. DO NOT output any conversational text or explanations before or after the tool call. Output ONLY the raw JSON object.
 """
 
-
-# ==================== OMNIGORTEX BRAIN (Native Groq SDK) ====================
-class OmniCortexBrain:
-    """
-    The OmniCortex Master Brain using Groq's NATIVE Python SDK.
-    Bypasses all LangChain/LangGraph wrappers to eliminate tool-calling bugs.
-    """
-
-    def __init__(self):
-        api_key = os.environ.get("GROQ_API_KEY")
-        if not api_key:
-            raise ValueError("GROQ_API_KEY environment variable not found.")
+# ==================== HELPERS ====================
+def sanitize_tool_output(raw_output: str) -> str:
+    """Strips hallucinated Markdown or XML from Groq tool calls."""
+    if not isinstance(raw_output, str):
+        return raw_output
         
-        self.client = Groq(api_key=api_key)
-        self.model = "llama-3.3-70b-versatile"
-
-    def invoke(self, messages_input: dict) -> dict:
-        """
-        Runs a full conversation turn with automatic tool execution.
-        Input: {"messages": [list of dicts with role/content]}
-        Output: {"messages": [full message list including AI response]}
-        """
-        # Convert LangChain message objects to plain dicts for Groq SDK
-        messages = []
-        messages.append({"role": "system", "content": SYSTEM_PROMPT})
-        
-        for msg in messages_input.get("messages", []):
-            if hasattr(msg, 'content'):
-                # LangChain message object
-                if hasattr(msg, 'type'):
-                    role = "user" if msg.type == "human" else "assistant"
-                else:
-                    role = getattr(msg, 'role', 'user')
-                messages.append({"role": role, "content": msg.content})
-            elif isinstance(msg, dict):
-                messages.append(msg)
-
-        # Tool-calling loop (max 5 iterations)
-        for iteration in range(5):
-            print(f"[OmniCortex] Iteration {iteration + 1}: Sending {len(messages)} messages to Groq...")
-            
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                tools=TOOLS_SCHEMA,
-                tool_choice="auto",
-                temperature=0.0,
-                max_tokens=4096,
-            )
-            
-            response_message = response.choices[0].message
-            
-            # If no tool calls, we're done
-            if not response_message.tool_calls:
-                print(f"[OmniCortex] No tool calls. Final response length: {len(response_message.content or '')} chars")
-                # Return in the format app.py expects
-                final_content = response_message.content or "I apologize, I was unable to generate a response."
-                
-                class FakeMessage:
-                    def __init__(self, content):
-                        self.content = content
-                
-                return {"messages": messages_input.get("messages", []) + [FakeMessage(final_content)]}
-
-            # Process tool calls
-            print(f"[OmniCortex] Tool calls detected: {[tc.function.name for tc in response_message.tool_calls]}")
-            
-            # Append the assistant's response (with tool calls) to messages
-            messages.append({
-                "role": "assistant",
-                "content": response_message.content or "",
-                "tool_calls": [
-                    {
-                        "id": tc.id,
-                        "type": "function",
-                        "function": {
-                            "name": tc.function.name,
-                            "arguments": tc.function.arguments
-                        }
-                    } for tc in response_message.tool_calls
-                ]
-            })
-
-            # Execute each tool and append results
-            for tool_call in response_message.tool_calls:
-                tool_name = tool_call.function.name
-                tool_args = json.loads(tool_call.function.arguments)
-                print(f"[OmniCortex] Executing: {tool_name}({tool_args})")
-
-                if tool_name in TOOLS_MAP:
-                    try:
-                        result = TOOLS_MAP[tool_name](**tool_args)
-                        print(f"[OmniCortex] Tool result preview: {str(result)[:200]}...")
-                    except Exception as e:
-                        result = f"Tool execution error: {str(e)}"
-                        print(f"[OmniCortex] Tool ERROR: {e}")
-                else:
-                    result = f"Unknown tool: {tool_name}"
-
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": tool_call.id,
-                    "content": str(result)
-                })
-
-        # Fallback
-        class FakeMessage:
-            def __init__(self, content):
-                self.content = content
-        return {"messages": messages_input.get("messages", []) + [FakeMessage("Analysis complete. Please ask a follow-up question.")]}
-
-
-def get_omnicortex_brain():
-    """Factory function that returns the OmniCortex brain instance."""
-    return OmniCortexBrain()
+    # Strip markdown
+    clean_text = re.sub(r'
