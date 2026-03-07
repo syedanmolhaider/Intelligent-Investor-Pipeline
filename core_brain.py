@@ -36,6 +36,6 @@ Format your responses beautifully with Markdown (bolding, bullet points) so it i
 """
 
     # Construct the Tool Calling Agent using the modern LangGraph prebuilt
-    agent_executor = create_react_agent(llm, tools, state_modifier=system_prompt)
+    agent_executor = create_react_agent(llm, tools, messages_modifier=system_prompt)
     
     return agent_executor
