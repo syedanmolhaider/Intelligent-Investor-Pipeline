@@ -26,6 +26,13 @@ def initialize_llm():
         max_retries=3    # Auto-retry softly if rate limit temporarily hits
     )
     
+    # WORKAROUND FOR CREWAI 0.108.0 BUG:
+    # CrewAI aggressively checks for OpenAI keys even when explicitly passed a Groq manager_llm
+    # because it tries to initialize text-embedding-ada-002 in the background for internal memory.
+    # To bypass this error without needing a paid OpenAI key, we provide a placeholder key.
+    if "OPENAI_API_KEY" not in os.environ:
+        os.environ["OPENAI_API_KEY"] = "sk-proj-placeholder-key-for-crewai-bypass-123456789"
+        
     print("Successfully initialized Groq LLM (Llama 3).")
     return llm
 
