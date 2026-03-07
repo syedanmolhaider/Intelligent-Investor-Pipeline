@@ -1,11 +1,14 @@
 from crewai import Agent, Task, Crew, Process
-from crew_logic import initialize_llm
 from tools import fetch_sql_metrics, search_live_news
+import os
 
 def create_and_run_crew(asset_or_fund: str):
-    llm = initialize_llm()
-    if not llm:
-        return "Error: LLM could not be initialized. Check API Key."
+    # Ensure Telemetry/Tracing is off to prevent background OpenAI calls
+    os.environ["CREWAI_DISABLE_TELEMETRY"] = "true"
+    os.environ["OTEL_SDK_DISABLED"] = "true"
+    
+    # Native CrewAI string for Groq via LiteLLM
+    groq_llm = "groq/llama3-8b-8192"
 
     # 1. The Graham Analyst
     graham_analyst = Agent(
@@ -15,7 +18,7 @@ def create_and_run_crew(asset_or_fund: str):
         verbose=True,
         allow_delegation=False,
         tools=[fetch_sql_metrics],
-        llm=llm
+        llm=groq_llm
     )
 
     # 2. The Macro Expert
@@ -26,7 +29,7 @@ def create_and_run_crew(asset_or_fund: str):
         verbose=True,
         allow_delegation=False,
         tools=[search_live_news], 
-        llm=llm
+        llm=groq_llm
     )
 
     # 3. The Risk Skeptic
@@ -36,7 +39,7 @@ def create_and_run_crew(asset_or_fund: str):
         backstory='You are naturally pessimistic. When others see a "cheap" stock, you assume it is a value trap. You look for reasons why the asset might go to zero or underperform the risk-free rate.',
         verbose=True,
         allow_delegation=False,
-        llm=llm
+        llm=groq_llm
     )
 
     # 4. The Chief Investment Officer (CIO)
@@ -46,7 +49,7 @@ def create_and_run_crew(asset_or_fund: str):
         backstory='You are the boss. You take the strict numbers from the Analyst, the real-world context from the Macro Expert, and the warnings from the Skeptic. You make the final call for the user\'s portfolio.',
         verbose=True,
         allow_delegation=False,
-        llm=llm
+        llm=groq_llm
     )
 
     # TASKS
@@ -79,7 +82,7 @@ def create_and_run_crew(asset_or_fund: str):
         agents=[graham_analyst, macro_expert, risk_skeptic, cio],
         tasks=[task_quant, task_macro, task_risk, task_cio],
         process=Process.sequential,
-        manager_llm=llm, 
+        manager_llm=groq_llm, 
         memory=False, # <--- ENFORCES NO BACKGROUND OPENAI EMBEDDINGS
         verbose=True
     )
