@@ -7,8 +7,9 @@ def create_and_run_crew(asset_or_fund: str):
     os.environ["CREWAI_DISABLE_TELEMETRY"] = "true"
     os.environ["OTEL_SDK_DISABLED"] = "true"
     
-    # Native CrewAI string for Groq via LiteLLM
-    groq_llm = "groq/llama-3.1-8b-instant"
+    # Native CrewAI string for Groq via LiteLLM. We use Groq's 70B model
+    # because the 8B models can hallucinate tool-calling formats!
+    groq_llm = "groq/llama-3.3-70b-versatile"
 
     # 1. The Graham Analyst
     graham_analyst = Agent(
