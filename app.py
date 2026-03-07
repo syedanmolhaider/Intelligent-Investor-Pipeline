@@ -122,12 +122,12 @@ if prompt := st.chat_input("Talk with OmniCortex... (e.g. Analyze HUBC.KA)"):
                     elif msg["role"] == "assistant":
                         chat_history.append(AIMessage(content=msg["content"]))
                 
-                # Fetch the intelligent response from Langchain core
+                # Fetch the intelligent response from Langgraph core
                 response = brain.invoke(
-                    {"input": prompt, "chat_history": chat_history}
+                    {"messages": chat_history + [HumanMessage(content=prompt)]}
                 )
                 
-                ai_reply = response["output"]
+                ai_reply = response["messages"][-1].content
                 st.markdown(ai_reply)
                 
                 # Add assistant response to chat history
