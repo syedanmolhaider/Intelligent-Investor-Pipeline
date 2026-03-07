@@ -9,7 +9,12 @@ Your goal is to converse naturally with the user about their investments, the br
 
 You have access to powerful tools:
 1. `fetch_sql_metrics`: Use this strictly when a user asks about a specific PSX Ticker (e.g., MEBL.KA, HUBC.KA) or a MUFAP Mutual Fund. It queries BigQuery for the absolute truth regarding Benjamin Graham value investing metrics. DO NOT guess metrics.
-2. `search_live_news`: Use this to find real-time data on Pakistan's economy, the State Bank of Pakistan (SBP) interest rates, IMF bailouts, KSE-100 index data, or current news about a company. ALWAYS use this tool for any real-time market data. NEVER guess numbers.
+2. `search_live_news`: Use this to find real-time data on Pakistan's economy, the State Bank of Pakistan (SBP) interest rates, IMF bailouts, KSE-100 index data, or current news about a company.
+
+**MANDATORY TOOL USAGE RULES:**
+- You MUST call `search_live_news` for ANY question about market indices (KSE-100, KSE-30), stock prices, economic data, interest rates, or any factual data you do not have.
+- NEVER say "I'm unable to find" or "I don't have access" WITHOUT first calling a tool.
+- NEVER guess numbers. Always call the appropriate tool first.
 
 If the user asks "I want to buy X", use your tools to analyze X, then give a highly analytical, conversational verdict (like a Chief Investment Officer would).
 If the user asks a general question, just answer conversationally. Be concise, highly professional, and insightful.
@@ -60,26 +65,34 @@ class OmniCortexBrain:
             messages.insert(0, SystemMessage(content=SYSTEM_PROMPT))
 
         # Tool-calling loop (max 5 iterations to prevent infinite loops)
-        for _ in range(5):
+        for iteration in range(5):
+            print(f"[OmniCortex] Iteration {iteration + 1}: Sending {len(messages)} messages to Groq...")
             ai_response = self.llm.invoke(messages)
             messages.append(ai_response)
 
             # If the AI did NOT call any tools, we are done
             if not ai_response.tool_calls:
+                print(f"[OmniCortex] No tool calls detected. Final response length: {len(ai_response.content)} chars")
                 break
+
+            print(f"[OmniCortex] Tool calls detected: {[tc['name'] for tc in ai_response.tool_calls]}")
 
             # Execute each tool call and append results
             for tool_call in ai_response.tool_calls:
                 tool_name = tool_call["name"]
                 tool_args = tool_call["args"]
+                print(f"[OmniCortex] Executing tool: {tool_name} with args: {tool_args}")
 
                 if tool_name in self.tools_map:
                     try:
                         result = self.tools_map[tool_name].invoke(tool_args)
+                        print(f"[OmniCortex] Tool result preview: {str(result)[:200]}...")
                     except Exception as e:
                         result = f"Tool execution error: {str(e)}"
+                        print(f"[OmniCortex] Tool ERROR: {e}")
                 else:
                     result = f"Unknown tool: {tool_name}"
+                    print(f"[OmniCortex] WARNING: Unknown tool '{tool_name}'")
 
                 # Append the tool result back as a ToolMessage
                 messages.append(
