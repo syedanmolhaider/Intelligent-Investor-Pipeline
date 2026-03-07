@@ -9,4 +9,4 @@ crewai
 langchain-groq
 duckduckgo-search
 streamlit>=1.35.0
-
+groq
