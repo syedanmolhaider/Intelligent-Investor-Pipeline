@@ -86,7 +86,8 @@ def execute_search_live_news(search_query: str) -> str:
     """Searches the live web using DuckDuckGo."""
     try:
         with DDGS() as ddgs:
-            results = list(ddgs.text(search_query, region='wt-wt', safesearch='moderate', max_results=5))
+            # Increased max_results to 10 to give the AI more context to extract exact numbers
+            results = list(ddgs.text(search_query, region='wt-wt', safesearch='moderate', max_results=10))
             
             if not results:
                 return f"No live news found for query: {search_query}"
