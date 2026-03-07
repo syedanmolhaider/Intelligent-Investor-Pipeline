@@ -9,3 +9,4 @@ crewai
 langchain-groq
 duckduckgo-search
 streamlit
+protobuf<=3.20.3
