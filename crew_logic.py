@@ -16,12 +16,10 @@ def initialize_llm():
         print("  Mac/Linux:      export GROQ_API_KEY='your_key_here'")
         return None
 
-    # Using LLaMA 3 8B model. It is exceptionally fast, mathematically capable, 
-    # and has generous rate limits on the Groq free tier.
-    # (Optional upgrade: "llama3-70b-8192" if higher reasoning is needed later but beware stricter limits)
+    # Using LLaMA 3.3 70B model. It is exceptionally smart and solves XML tool hallucinations.
     llm = ChatGroq(
         groq_api_key=api_key,
-        model_name="llama3-8b-8192", 
+        model_name="llama-3.3-70b-versatile", 
         temperature=0.1, # Keep temperature low to prevent hallucination in financial analysis
         max_retries=3    # Auto-retry softly if rate limit temporarily hits
     )
@@ -31,7 +29,7 @@ def initialize_llm():
     # checks. We completely hijack the OpenAI base url here and point it strictly to Groq's
     # OpenAI-compatible endpoint. This solves all "Incorrect API key" errors.
     os.environ["OPENAI_API_BASE"] = "https://api.groq.com/openai/v1"
-    os.environ["OPENAI_MODEL_NAME"] = "llama3-8b-8192"
+    os.environ["OPENAI_MODEL_NAME"] = "llama-3.3-70b-versatile"
     os.environ["OPENAI_API_KEY"] = api_key
         
     print("Successfully initialized Groq LLM (Llama 3).")

@@ -1,5 +1,6 @@
 from crewai import Agent, Task, Crew, Process
 from tools import fetch_sql_metrics, search_live_news
+from crew_logic import initialize_llm
 import os
 
 def create_and_run_crew(asset_or_fund: str):
@@ -7,9 +8,10 @@ def create_and_run_crew(asset_or_fund: str):
     os.environ["CREWAI_DISABLE_TELEMETRY"] = "true"
     os.environ["OTEL_SDK_DISABLED"] = "true"
     
-    # Native CrewAI string for Groq via LiteLLM. We use Groq's 70B model
-    # because the 8B models can hallucinate tool-calling formats!
-    groq_llm = "groq/llama-3.3-70b-versatile"
+    # Use LangChain ChatGroq wrapper which has stable JSON Tool parsing
+    llm = initialize_llm()
+    if not llm:
+        return "Error: LLM could not be initialized."
 
     # 1. The Graham Analyst
     graham_analyst = Agent(
@@ -19,7 +21,7 @@ def create_and_run_crew(asset_or_fund: str):
         verbose=True,
         allow_delegation=False,
         tools=[fetch_sql_metrics],
-        llm=groq_llm
+        llm=llm
     )
 
     # 2. The Macro Expert
@@ -30,7 +32,7 @@ def create_and_run_crew(asset_or_fund: str):
         verbose=True,
         allow_delegation=False,
         tools=[search_live_news], 
-        llm=groq_llm
+        llm=llm
     )
 
     # 3. The Risk Skeptic
@@ -40,7 +42,7 @@ def create_and_run_crew(asset_or_fund: str):
         backstory='You are naturally pessimistic. When others see a "cheap" stock, you assume it is a value trap. You look for reasons why the asset might go to zero or underperform the risk-free rate.',
         verbose=True,
         allow_delegation=False,
-        llm=groq_llm
+        llm=llm
     )
 
     # 4. The Chief Investment Officer (CIO)
@@ -50,7 +52,7 @@ def create_and_run_crew(asset_or_fund: str):
         backstory='You are the boss. You take the strict numbers from the Analyst, the real-world context from the Macro Expert, and the warnings from the Skeptic. You make the final call for the user\'s portfolio.',
         verbose=True,
         allow_delegation=False,
-        llm=groq_llm
+        llm=llm
     )
 
     # TASKS
@@ -83,7 +85,7 @@ def create_and_run_crew(asset_or_fund: str):
         agents=[graham_analyst, macro_expert, risk_skeptic, cio],
         tasks=[task_quant, task_macro, task_risk, task_cio],
         process=Process.sequential,
-        manager_llm=groq_llm, 
+        manager_llm=llm, 
         memory=False, # <--- ENFORCES NO BACKGROUND OPENAI EMBEDDINGS
         verbose=True
     )
