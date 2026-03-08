@@ -24,6 +24,26 @@ def fetch_sql_metrics(asset_identifier: str) -> str:
     
     safe_id = asset_identifier.replace("'", "").replace('"', '').replace(';', '').strip()
     
+    # Common Acronym Mapping for MUFAP Funds (Retail Dictionary)
+    acronym_map = {
+        "nbpisf": "NBP Islamic Stock Fund",
+        "mifl": "Meezan Islamic Fund",
+        "mef": "Meezan Energy Fund",
+        "agipf": "Al Ameen Shariah Stock Fund",
+        "assf": "Al Ameen Shariah Stock Fund",
+        "hblif": "HBL Islamic Stock Fund",
+        "nitief": "NIT Islamic Equity Fund",
+        "alhamra": "Alhamra Islamic Stock Fund",
+        "mmsf": "Meezan Mahana Amdani Fund",
+    }
+    
+    # Attempt to resolve common abbreviations from dirty inputs
+    extracted_search = safe_id.lower().replace(" ", "")
+    for ticker, full_name in acronym_map.items():
+        if ticker in extracted_search:
+            safe_id = full_name
+            break
+    
     if ".KA" in safe_id.upper():
         query = """
             SELECT * FROM `pk-market-data.market_data.graham_metrics_equities`
@@ -175,6 +195,9 @@ class OmniCortexBrain:
             graham_prompt = f"""
             You are the Graham Fundamental Analyst. Your ONLY tool is fetch_sql_metrics.
             You must use fetch_sql_metrics to get fundamental data for the user's query: '{user_input}'.
+            
+            TOOL CRITICAL RULE: Before passing the argument to `fetch_sql_metrics`, you MUST isolate strictly the asset or fund name (e.g. 'NBP Islamic Stock Fund', 'HUBC.KA'). NEVER pass conversational words like 'compare', 'percentages', 'yearly', or the tool will crash. Only pass the isolated asset name/ticker!
+            
             If the query is general, use fetch_sql_metrics for related fundamental data or explain that you focus on specific asset fundamentals.
             Return a purely data-driven fundamental analysis. Do not include conversational filler.
             
