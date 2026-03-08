@@ -38,7 +38,7 @@ def fetch_sql_metrics(asset_identifier: str) -> str:
         )
         asset_type = "Equities"
     else:
-        # Use parameterized LIKE query for mutual funds
+        # For mutual funds, try the performance view first, fall back to raw NAV table
         query = """
             SELECT * FROM `pk-market-data.market_data.mufap_performance_metrics`
             WHERE Fund_Name LIKE CONCAT('%', @fund_name, '%')
@@ -57,7 +57,35 @@ def fetch_sql_metrics(asset_identifier: str) -> str:
         results = [dict(row) for row in query_job]
         
         if not results:
-            return f"No metrics found for {asset_type} asset: {asset_identifier}. Verify the ticker/fund name is correct."
+            # For mutual funds, try the raw table as fallback
+            if asset_type == "Mutual Funds":
+                fallback_query = """
+                    SELECT Date, Fund_Name, Category, NAV
+                    FROM `pk-market-data.market_data.mufap_daily_nav`
+                    WHERE Fund_Name LIKE CONCAT('%', @fund_name, '%')
+                    ORDER BY Date DESC
+                    LIMIT 5
+                """
+                fallback_config = bigquery.QueryJobConfig(
+                    query_parameters=[
+                        bigquery.ScalarQueryParameter("fund_name", "STRING", safe_id)
+                    ]
+                )
+                fallback_job = bq_client.query(fallback_query, job_config=fallback_config)
+                fallback_results = [dict(row) for row in fallback_job]
+                if fallback_results:
+                    result_str = f"--- RAW NAV DATA FOR {asset_identifier} (Mutual Funds - Fallback) ---\n"
+                    for row in fallback_results:
+                        for key, value in row.items():
+                            result_str += f"{key}: {value}\n"
+                        result_str += "---\n"
+                    return result_str
+            
+            return (
+                f"No SQL metrics found for {asset_type} asset: {asset_identifier}. "
+                f"The database has no records matching this name. "
+                f"YOU MUST STILL PROCEED: Call search_live_news to find current information about this asset from the web."
+            )
             
         result_str = f"--- PRE-COMPUTED SQL METRICS FOR {asset_identifier} ({asset_type}) ---\n"
         for key, value in results[0].items():
@@ -65,7 +93,37 @@ def fetch_sql_metrics(asset_identifier: str) -> str:
         return result_str
         
     except Exception as e:
-        return f"Database Query Failed: {str(e)}"
+        # On query failure, try raw table fallback for mutual funds
+        if asset_type == "Mutual Funds":
+            try:
+                fallback_query = """
+                    SELECT Date, Fund_Name, Category, NAV
+                    FROM `pk-market-data.market_data.mufap_daily_nav`
+                    WHERE Fund_Name LIKE CONCAT('%', @fund_name, '%')
+                    ORDER BY Date DESC
+                    LIMIT 5
+                """
+                fallback_config = bigquery.QueryJobConfig(
+                    query_parameters=[
+                        bigquery.ScalarQueryParameter("fund_name", "STRING", safe_id)
+                    ]
+                )
+                fallback_job = bq_client.query(fallback_query, job_config=fallback_config)
+                fallback_results = [dict(row) for row in fallback_job]
+                if fallback_results:
+                    result_str = f"--- RAW NAV DATA FOR {asset_identifier} (Fallback - View Error) ---\n"
+                    for row in fallback_results:
+                        for key, value in row.items():
+                            result_str += f"{key}: {value}\n"
+                        result_str += "---\n"
+                    return result_str
+            except Exception:
+                pass
+        
+        return (
+            f"SQL query failed for {asset_identifier}: {str(e)}. "
+            f"YOU MUST STILL PROCEED: Call search_live_news to find current information about this asset from the web."
+        )
 
 
 def search_live_news(search_query: str) -> str:
