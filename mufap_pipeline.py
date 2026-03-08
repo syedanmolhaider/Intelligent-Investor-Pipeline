@@ -12,12 +12,40 @@ client = bigquery.Client()
 def fetch_mufap_data():
     print("Fetching live mutual fund data from the new MUFAP portal...")
     
-    url = "https://www.mufap.com.pk/Industry/IndustryStatDaily?tab=1"
-    scraper = cloudscraper.create_scraper(browser={'browser': 'chrome', 'platform': 'windows', 'desktop': True})
-    response = scraper.get(url)
+    # MUFAP servers frequently timeout or throw 500s. We need robust retries and fallbacks.
+    urls_to_try = [
+        "https://www.mufap.com.pk/Industry/IndustryStatDaily?tab=1",
+        "https://www.mufap.com.pk/Industry/IndustryStatDaily?tab=3"
+    ]
     
-    if response.status_code != 200:
-        print(f"Failed to fetch. Status code: {response.status_code}")
+    scraper = cloudscraper.create_scraper(browser={'browser': 'chrome', 'platform': 'windows', 'desktop': True})
+    
+    response = None
+    import time
+    
+    for url in urls_to_try:
+        print(f"Trying URL: {url}")
+        for attempt in range(3):
+            try:
+                # Use a larger timeout since their server is very slow
+                resp = scraper.get(url, timeout=45)
+                if resp.status_code == 200:
+                    response = resp
+                    break
+                else:
+                    print(f"  Attempt {attempt+1} failed with status: {resp.status_code}")
+            except Exception as e:
+                print(f"  Attempt {attempt+1} encountered error: {type(e).__name__} - {str(e)}")
+            
+            # Backoff before retry
+            time.sleep(10 * (attempt + 1))
+            
+        if response:
+            print("Successfully fetched data!")
+            break
+
+    if not response:
+        print("CRITICAL: Failed to fetch MUFAP data after all retries and fallback URLs.")
         return None
 
     html_data = StringIO(response.text)
