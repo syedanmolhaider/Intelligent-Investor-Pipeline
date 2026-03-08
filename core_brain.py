@@ -24,6 +24,28 @@ def fetch_sql_metrics(asset_identifier: str) -> str:
     
     safe_id = asset_identifier.replace("'", "").replace('"', '').replace(';', '').strip()
     
+    # Strip common conversational fluff that the LLM fails to isolate
+    fluff_words = [
+        "yearly", "performance", "comparison", "compare", 
+        "progress", "percentages", "analysis", "latest", 
+        "evaluate", "metric", "metrics", "data", "nav",
+        "of", "for", "the", "what", "is", "are", "show", 
+        "me", "tell", "about", "fund", "stock", "company", "limited"
+    ]
+    
+    # We only clean if it's a Mutual Fund (not ending in .KA)
+    if not safe_id.upper().endswith(".KA"):
+        words = safe_id.split()
+        # Keep words that aren't in fluff list, or are part of "Fund" which actually exists in MUFAP names
+        # But wait, "Fund" is part of the official name! e.g., "NBP Islamic Stock Fund".
+        # So we shouldn't strip "Fund". Let's just strip exact match conversational words.
+        clean_words = []
+        for w in words:
+            wl = w.lower()
+            if wl not in ["yearly", "performance", "comparison", "compare", "progress", "percentages", "analysis", "latest", "evaluate"]:
+                clean_words.append(w)
+        safe_id = " ".join(clean_words).strip()
+    
     # Common Acronym Mapping for MUFAP Funds (Retail Dictionary)
     acronym_map = {
         "nbpisf": "NBP Islamic Stock Fund",
@@ -40,7 +62,8 @@ def fetch_sql_metrics(asset_identifier: str) -> str:
     # Attempt to resolve common abbreviations from dirty inputs
     extracted_search = safe_id.lower().replace(" ", "")
     for ticker, full_name in acronym_map.items():
-        if ticker in extracted_search:
+        full_name_clean = full_name.lower().replace(" ", "")
+        if ticker in extracted_search or full_name_clean in extracted_search:
             safe_id = full_name
             break
     
