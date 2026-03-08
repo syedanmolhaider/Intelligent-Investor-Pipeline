@@ -6,51 +6,49 @@ from google.cloud import bigquery
 from duckduckgo_search import DDGS
 
 # ==================== TOOL DEFINITIONS (Native Groq JSON Schema) ====================
-
 TOOLS_SCHEMA = [
-{
-"type": "function",
-"function": {
-"name": "fetch_sql_metrics",
-"description": "Fetches pre-computed Benjamin Graham value investing metrics for a specific PSX stock or MUFAP mutual fund from BigQuery. Use this when user asks about a specific ticker like MEBL.KA, HUBC.KA, or a mutual fund name.",
-"parameters": {
-"type": "object",
-"properties": {
-"asset_identifier": {
-"type": "string",
-"description": "The PSX ticker symbol (e.g. 'MEBL.KA', 'HUBC.KA') or the MUFAP fund name."
-}
-},
-"required": ["asset_identifier"]
-}
-}
-},
-{
-"type": "function",
-"function": {
-"name": "search_live_news",
-"description": "Searches the live web for real-time news, market data, KSE-100 index status, State Bank of Pakistan interest rates, IMF news, oil prices, or any current information about Pakistan's economy or a specific company.",
-"parameters": {
-"type": "object",
-"properties": {
-"search_query": {
-"type": "string",
-"description": "A clear, specific search query (e.g. 'KSE 100 index closing Friday March 6', 'State Bank Pakistan interest rate today')"
-}
-},
-"required": ["search_query"]
-}
-}
-}
+    {
+        "type": "function",
+        "function": {
+            "name": "fetch_sql_metrics",
+            "description": "Fetches pre-computed Benjamin Graham value investing metrics for a specific PSX stock or MUFAP mutual fund from BigQuery. Use this when user asks about a specific ticker like MEBL.KA, HUBC.KA, or a mutual fund name.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "asset_identifier": {
+                        "type": "string",
+                        "description": "The PSX ticker symbol (e.g. 'MEBL.KA', 'HUBC.KA') or the MUFAP fund name."
+                    }
+                },
+                "required": ["asset_identifier"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_live_news",
+            "description": "Searches the live web for real-time news, market data, KSE-100 index status, State Bank of Pakistan interest rates, IMF news, oil prices, or any current information about Pakistan's economy or a specific company.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "search_query": {
+                        "type": "string",
+                        "description": "A clear, specific search query (e.g. 'KSE 100 index closing Friday March 6', 'State Bank Pakistan interest rate today')"
+                    }
+                },
+                "required": ["search_query"]
+            }
+        }
+    }
 ]
 
 # ==================== TOOL EXECUTION FUNCTIONS ====================
-
 def execute_fetch_sql_metrics(asset_identifier: str) -> str:
     """Queries BigQuery for pre-computed Graham metrics."""
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "bq-key.json"
     bq_client = bigquery.Client()
-
+    
     if ".KA" in asset_identifier.upper():
         query = f"""
             SELECT * FROM `pk-market-data.market_data.graham_metrics_equities`
@@ -90,7 +88,7 @@ def execute_search_live_news(search_query: str) -> str:
         with DDGS() as ddgs:
             # Increased max_results to 10 to give the AI more context to extract exact numbers
             results = list(ddgs.text(search_query, region='wt-wt', safesearch='moderate', max_results=10))
-
+            
             if not results:
                 return f"No live news found for query: {search_query}"
             
@@ -106,76 +104,64 @@ def execute_search_live_news(search_query: str) -> str:
 
 
 # Map tool names to their execution functions
-
 TOOLS_MAP = {
-"fetch_sql_metrics": execute_fetch_sql_metrics,
-"search_live_news": execute_search_live_news,
+    "fetch_sql_metrics": execute_fetch_sql_metrics,
+    "search_live_news": execute_search_live_news,
 }
 
 # ==================== SYSTEM PROMPT ====================
+SYSTEM_PROMPT = """You are the OmniCortex Master Brain, an autonomous AI investment committee for the Pakistani market (PSX & MUFAP). 
 
-SYSTEM_PROMPT = """You are the OmniCortex Master Brain, an autonomous AI investment committee for the Pakistani market (PSX & MUFAP).
-You DO NOT act as a standard, polite chatbot. You operate strictly as a panel of 4 ruthless financial experts following Benjamin Graham's principles.
+**MANDATORY TOOL USAGE:**
+- If asked about an asset, you MUST call `fetch_sql_metrics`. 
+- You MUST call `search_live_news` to check KSE-100 trends, SBP interest rates, or company news. 
+- NEVER GUESS NUMBERS.
 
-MANDATORY TOOL USAGE:
+**CRITICAL INSTRUCTIONS FOR TOOL CALLING:**
+1. You are strictly JSON-only for tool calls. DO NOT wrap tools in XML or markdown.
+2. Output ONLY raw JSON when calling a tool.
 
-If asked about an asset, you MUST call fetch_sql_metrics.
+**FINAL RESPONSE FORMAT (ABSOLUTELY MANDATORY):**
+You DO NOT act as a standard, polite chatbot. When you have finished fetching data and are ready to reply to the user, you MUST NEVER write a basic summary like "Based on the metrics...". 
+Instead, you MUST structure your final response EXACTLY as the following meeting transcript. Start the debate immediately.
 
-You MUST call search_live_news to check KSE-100 trends, SBP interest rates, or company news.
+### 🏛️ OmniCortex Investment Committee Debate
 
-NEVER GUESS NUMBERS.
-
-STRICT MULTI-AGENT OUTPUT FORMAT:
-Whenever the user asks to analyze a stock, mutual fund, or market condition, you MUST structure your final response EXACTLY as the following meeting transcript. DO NOT add conversational filler like "Here is your analysis" or "Let's look at this." Just start the debate immediately.
-
-🏛️ OmniCortex Investment Committee Debate
-
-👔 The Graham Analyst (Fundamental Value):
+**👔 The Graham Analyst (Fundamental Value):**
 [Evaluate the SQL metrics exactly. Is the price near the 52-week low? Are the moving averages showing a discount? Speak strictly in numbers and margins of safety.]
 
-🌍 The Macro Expert (News & Economy):
-[Evaluate the DuckDuckGo news, KSE-100 trends, and Pakistan's macro environment (SBP rates, IMF). Does the current economy support buying this asset?]
+**🌍 The Macro Expert (News & Economy):**
+[Evaluate the DuckDuckGo news, KSE-100 trends, and Pakistan's macro environment. Does the current economy support buying this asset? If no news was found, state that it lacks market visibility.]
 
-🕵️ The Risk Skeptic (Contrarian Attacker):
-[Ruthlessly attack the Analyst's thesis. Point out missing data, geopolitical risks, lack of news momentum, or why this might be a 'value trap'. Be highly pessimistic.]
+**🕵️ The Risk Skeptic (Contrarian Attacker):**
+[Ruthlessly attack the Analyst's thesis. Point out missing data, geopolitical risks, pink sheets, or why this might be a 'value trap'. Be highly pessimistic.]
 
-⚖️ The Chief Investment Officer (Final Verdict):
-[Synthesize the debate. Issue a clear, bolded, final verdict: BUY ON CHEAP, HOLD / WAIT FOR DROP, or SELL. Justify the decision strictly based on the margin of safety vs. risk.]
-
-RULES:
-
-You are strictly JSON-only for tool calls. DO NOT wrap tools in XML or markdown.
-
-When generating the final text response, you MUST use the 4 personas above.
-
-If a tool returns "No news found", the Macro Expert MUST state that the asset lacks market momentum or visibility.
+**⚖️ The Chief Investment Officer (Final Verdict):**
+[Synthesize the debate. Issue a clear, bolded, final verdict: **BUY ON CHEAP**, **HOLD / WAIT FOR DROP**, or **SELL**. Justify the decision strictly based on the margin of safety vs. risk.]
 """
 
 # ==================== HELPERS ====================
-
 def sanitize_tool_output(raw_output: str) -> str:
     """Strips hallucinated Markdown or XML from Groq tool calls."""
     if not isinstance(raw_output, str):
         return raw_output
-
+        
     # Strip markdown - dynamically creates backticks so the Canvas parser doesn't crash!
     bt = chr(96) * 3 
     pattern = bt + r'(?:json)?\n?(.*?)\n?' + bt
     clean_text = re.sub(pattern, r'\1', raw_output, flags=re.DOTALL)
-
+    
+    # Strip DeepSeek-R1 reasoning blocks (CRITICAL FOR NEW MODEL)
+    clean_text = re.sub(r'<think>\s*(.*?)\s*</think>', '', clean_text, flags=re.DOTALL)
+    
     # Strip XML tags
     clean_text = re.sub(r'<function>\s*(.*?)\s*</function>', r'\1', clean_text, flags=re.DOTALL)
     clean_text = re.sub(r'<tool_call>\s*(.*?)\s*</tool_call>', r'\1', clean_text, flags=re.DOTALL)
-
+    
     return clean_text.strip()
 
 
 # ==================== OMNICORTEX BRAIN (Native Groq SDK) ====================
-
-class FakeMessage:
-    def __init__(self, content):
-        self.content = content
-
 class OmniCortexBrain:
     """
     The OmniCortex Master Brain using Groq's NATIVE Python SDK.
@@ -188,7 +174,8 @@ class OmniCortexBrain:
             raise ValueError("GROQ_API_KEY environment variable not found.")
         
         self.client = Groq(api_key=api_key)
-        self.model = "llama-3.3-70b-versatile"
+        # UPGRADED TO DEEPSEEK-R1 (Smartest reasoning model currently on Groq)
+        self.model = "deepseek-r1-distill-llama-70b"
 
     def invoke(self, messages_input: dict) -> dict:
         messages = []
@@ -223,6 +210,10 @@ class OmniCortexBrain:
             if not response_message.tool_calls:
                 print(f"[OmniCortex] No tool calls. Final response length: {len(response_message.content or '')} chars")
                 final_content = response_message.content or "I apologize, I was unable to generate a response."
+                
+                class FakeMessage:
+                    def __init__(self, content):
+                        self.content = content
                 
                 return {"messages": messages_input.get("messages", []) + [FakeMessage(final_content)]}
 
@@ -279,6 +270,9 @@ class OmniCortexBrain:
                 })
 
         # Fallback if loop runs out
+        class FakeMessage:
+            def __init__(self, content):
+                self.content = content
         return {"messages": messages_input.get("messages", []) + [FakeMessage("Analysis complete. Please ask a follow-up question.")]}
 
 
