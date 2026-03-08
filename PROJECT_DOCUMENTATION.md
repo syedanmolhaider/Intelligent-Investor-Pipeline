@@ -8,7 +8,7 @@ OmniCortex is an autonomous, conversational **AI Quantitative Investment Committ
 
 The project consists of three major tiers:
 1. **Frontend (UI Layer)**: A sleek, dark-themed interface built in Streamlit that parses strict JSON payloads into modular components.
-2. **AI Intelligence Engine**: A custom sequential, multi-agent pipeline powered by Google's **Gemini 3.1 Flash-Lite**.
+2. **AI Intelligence Engine**: A custom sequential, multi-agent pipeline powered by Google's **Gemini 2.5 Flash**.
 3. **Data Pipelines & Storage**: Python-based scheduled scrapers and API fetchers that push raw market equity, NAV data, and dynamic macro indicators directly to **Google BigQuery** for high-speed querying.
 
 ---

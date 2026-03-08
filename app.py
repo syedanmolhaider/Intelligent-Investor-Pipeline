@@ -219,7 +219,7 @@ st.markdown("<p class='omni-tagline'>\"Ruthless Quantitative Analysis over Conve
 st.markdown("""
 <div class="status-bar">
     <span class="status-item"><span class="status-dot green"></span> BigQuery Connected</span>
-    <span class="status-item"><span class="status-dot blue"></span> Gemini 3.1 Flash-Lite</span>
+    <span class="status-item"><span class="status-dot blue"></span> Gemini 2.5 Flash</span>
     <span class="status-item"><span class="status-dot purple"></span> Graham Protocol Active</span>
 </div>
 """, unsafe_allow_html=True)

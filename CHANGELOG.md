@@ -1,5 +1,10 @@
 # OmniCortex Changelog
 
+## [V2.3] - 2026-03-08 (Model Upgrade to Gemini 2.5)
+
+### Changed
+- **Pipeline Heart Transplant**: Migrated the core `google.generativeai` multi-agent pipeline model off `gemini-3.1-flash-lite-preview` and onto `gemini-2.5-flash` natively in `core_brain.py`. Updated Streamlit UI connection graphics to reflect the new pipeline standard.
+
 ## [V2.2] - 2026-03-08 (Localization & Sci-Fi UI Overhaul)
 
 ### Changed

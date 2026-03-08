@@ -154,7 +154,7 @@ class OmniCortexBrain:
         
         genai.configure(api_key=api_key)
         self.today = datetime.now().strftime("%A, %B %d, %Y")
-        self.model_name = "gemini-3.1-flash-lite-preview"
+        self.model_name = "gemini-2.5-flash"
         print("[OmniCortex] Multi-Agent Sequential Pipeline Initialized.")
 
     def invoke(self, messages_input: dict) -> dict:
