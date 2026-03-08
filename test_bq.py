@@ -1,68 +1,36 @@
-import os
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "bq-key.json"
-from google.cloud import bigquery
-bq = bigquery.Client()
+import requests
+import pandas as pd
+from io import StringIO
 
-# Test 1: Does the view exist?
-print("=== Test 1: Check if mufap view exists ===")
-try:
-    q = bq.query("SELECT * FROM `pk-market-data.market_data.mufap_performance_metrics` LIMIT 1")
-    rows = [dict(r) for r in q]
-    if rows:
-        print("View exists. Columns:", list(rows[0].keys()))
-        print("Sample:", rows[0])
-    else:
-        print("View exists but is EMPTY.")
-except Exception as e:
-    print(f"VIEW ERROR: {e}")
+url = "https://www.mufap.com.pk/Industry/IndustryStatDaily?tab=1"
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.5',
+    'Referer': 'https://www.mufap.com.pk/',
+}
 
-# Test 2: Parameterized LIKE query (same as core_brain.py uses)
-print("\n=== Test 2: Parameterized LIKE query for NBP ===")
+print(f"Testing direct requests... {url}")
 try:
-    query = """
-        SELECT Fund_Name, NAV, Date
-        FROM `pk-market-data.market_data.mufap_performance_metrics`
-        WHERE Fund_Name LIKE CONCAT('%', @fund_name, '%')
-        ORDER BY Date DESC
-        LIMIT 3
-    """
-    jc = bigquery.QueryJobConfig(
-        query_parameters=[bigquery.ScalarQueryParameter("fund_name", "STRING", "NBP")]
-    )
-    rows = [dict(r) for r in bq.query(query, job_config=jc)]
-    print(f"Found {len(rows)} results")
-    for r in rows:
-        print(r)
+    r = requests.get(url, headers=headers, timeout=15)
+    print(f"Status Code: {r.status_code}")
+    if r.status_code == 200:
+        tables = pd.read_html(StringIO(r.text))
+        print(f"Tables: {len(tables)}")
+        if tables:
+            print(tables[0].head(2))
 except Exception as e:
-    print(f"PARAM QUERY ERROR: {e}")
+    print(f"requests failed: {e}")
 
-# Test 3: What fund names contain 'NBP'?
-print("\n=== Test 3: Direct search for NBP fund names ===")
+url_notab = "https://www.mufap.com.pk/Industry/IndustryStatDaily"
+print(f"\nTesting direct requests... {url_notab}")
 try:
-    q = bq.query("""
-        SELECT DISTINCT Fund_Name
-        FROM `pk-market-data.market_data.mufap_daily_nav`
-        WHERE Fund_Name LIKE '%NBP%'
-        LIMIT 10
-    """)
-    rows = [dict(r) for r in q]
-    print(f"Found {len(rows)} distinct fund names with 'NBP':")
-    for r in rows:
-        print(f"  - {r['Fund_Name']}")
+    r = requests.get(url_notab, headers=headers, timeout=15)
+    print(f"Status Code: {r.status_code}")
+    if r.status_code == 200:
+        tables = pd.read_html(StringIO(r.text))
+        print(f"Tables: {len(tables)}")
+        if tables:
+            print(tables[0].columns.tolist())
 except Exception as e:
-    print(f"DIRECT QUERY ERROR: {e}")
-
-# Test 4: Sample of all fund names
-print("\n=== Test 4: Sample fund names from raw table ===")
-try:
-    q = bq.query("""
-        SELECT DISTINCT Fund_Name
-        FROM `pk-market-data.market_data.mufap_daily_nav`
-        LIMIT 15
-    """)
-    rows = [dict(r) for r in q]
-    print(f"Sample of {len(rows)} fund names:")
-    for r in rows:
-        print(f"  - {r['Fund_Name']}")
-except Exception as e:
-    print(f"SAMPLE ERROR: {e}")
+    print(f"requests failed: {e}")

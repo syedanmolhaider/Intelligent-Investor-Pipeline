@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 import google.generativeai as genai
 from google.cloud import bigquery
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 
 # ==================== TOOL EXECUTION FUNCTIONS ====================
 # These are Python functions that Gemini will call natively via Automatic Function Calling.
