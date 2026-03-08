@@ -203,6 +203,11 @@ class OmniCortexBrain:
             
             TRANSLATION RULE: You MUST write your analysis entirely in layman's Roman Urdu. 
             Simplify complex terms (e.g. use "aik hisse ki qeemat" for NAV, "mahina-ba-mahina munafa" for MoM, "saalana munafa" for annualized return). Explain the numbers so an everyday person can understand.
+            
+            FORMATTING RULES:
+            1. NO FLUFF: Do not use greetings or conversational filler. Start analysis immediately.
+            2. BULLET POINTS: Format output strictly using short bullet points (*).
+            3. WORD LIMIT: Your entire response must not exceed 40 words.
             """
             graham_model = genai.GenerativeModel(
                 model_name=self.model_name,
@@ -224,6 +229,11 @@ class OmniCortexBrain:
             
             TRANSLATION RULE: You MUST write your analysis entirely in layman's Roman Urdu. 
             Explain macroeconomic concepts simply (e.g. explain interest rates as "bank ke munafe ki sharah", inflation as "mehengai").
+            
+            FORMATTING RULES:
+            1. NO FLUFF: Do not use greetings or conversational filler. Start analysis immediately.
+            2. BULLET POINTS: Format output strictly using short bullet points (*).
+            3. WORD LIMIT: Your entire response must not exceed 40 words.
             """
             macro_model = genai.GenerativeModel(
                 model_name=self.model_name,
@@ -244,6 +254,13 @@ class OmniCortexBrain:
             TRANSLATION RULE: You MUST write your analysis entirely in layman's Roman Urdu. 
             Explain risk simply (e.g. use "nuqsan ka khatra" or "paisa phansne ka dar").
             
+            FORMATTING RULES:
+            1. NO FLUFF: Do not use greetings or conversational filler. Start analysis immediately.
+            2. BULLET POINTS: Format output strictly using short bullet points (*).
+            3. WORD LIMIT: Your entire response must not exceed 40 words.
+            
+            ANTI-YAPPING RULE (GRACEFUL FAILURE): If Agent 1 or Agent 2 report missing data or lack of information, YOU MUST NOT write an essay about the risks of missing data. You must output exactly one sentence: 'Data dastiyab nahi. Barae meharbani durust fund ya stock ka naam likhein.' Do not elaborate further.
+            
             Graham Analysis: {graham_output}
             Macro Analysis: {macro_output}
             """
@@ -260,10 +277,17 @@ class OmniCortexBrain:
             Do not use conversational filler. Your output must strictly adhere to the requested JSON structure.
             Your verdict must be exactly one of: 'BUY', 'HOLD', or 'SELL'.
             
-            CRITICAL RULE: If Agent 1 (The Graham Analyst) reports that BigQuery returned zero metrics, or that fundamental data is missing, you must immediately halt the analysis. Your final verdict key MUST strictly be 'ERROR / INSUFFICIENT DATA'. You are explicitly forbidden from issuing a BUY, HOLD, or SELL rating, and you must not speculate on why the data is missing.
+            CRITICAL RULE (ANTI-YAPPING): If Agent 1 (The Graham Analyst) reports that BigQuery returned zero metrics, or that fundamental data is missing, you must immediately halt the analysis. Your final verdict key MUST strictly be 'ERROR / INSUFFICIENT DATA'. 
+            In the analysis text sections, you must output exactly: 'Data dastiyab nahi. Barae meharbani durust fund ya stock ka naam likhein.' You are explicitly forbidden from issuing a BUY, HOLD, or SELL rating, and you must not speculate on why the data is missing.
             
             TRANSLATION RULE: You MUST write the string values for `graham_analysis`, `macro_analysis`, and `risk_assessment` strictly in layman's Roman Urdu. 
             However, the JSON FORMAT KEYS completely remain in exactly English (e.g. "graham_analysis", "macro_analysis"). The value for the `verdict` key MUST also remain strictly in standard English (BUY / HOLD / SELL / ERROR / INSUFFICIENT DATA).
+            
+            FORMATTING RULES:
+            1. NO FLUFF: Do not use greetings. Start analysis immediately.
+            2. BULLET POINTS: Output the Roman Urdu text within the JSON values formatted with short bullet points (*).
+            3. WORD LIMIT: No text section (graham_analysis, macro_analysis, risk_assessment) can exceed 40 words.
+            4. MARKDOWN BOLDING: Format the Roman Urdu output inside the JSON payload using Markdown bolding (**text**) and line breaks (\\n) so it renders cleanly and is easy to scan.
             
             Graham Analysis: {graham_output}
             Macro Analysis: {macro_output}
