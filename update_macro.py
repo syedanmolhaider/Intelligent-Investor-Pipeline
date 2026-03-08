@@ -25,7 +25,7 @@ def update_macro_indicators():
     rows_to_insert = [
         {
             "Date": datetime.now().strftime("%Y-%m-%d"),
-            "SBP_Rate": 22.0,
+            "SBP_Rate": 10.50,
             "Indicator_Name": "SBP_Policy_Rate"
         }
     ]
