@@ -8,10 +8,10 @@ with open("bq-key.json", "r") as f:
 import streamlit as st
 import os
 
-if "GROQ_API_KEY" in st.secrets:
-    os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
+if "GOOGLE_API_KEY" in st.secrets:
+    os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
 
-# Grab the Groq Key from the terminal or test
+# Grab the Google Key from the terminal or test
 from core_brain import get_omnicortex_brain
 from langchain_core.messages import HumanMessage
 

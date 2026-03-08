@@ -1,25 +1,20 @@
 import streamlit as st
 import os
 import json
-import io
-from contextlib import redirect_stdout
-from google.cloud import bigquery
-import pandas as pd
-import logging
 import traceback
+import logging
 
-# Setup detailed logging for the user's AI assistant
+# Setup logging
 logging.basicConfig(
     level=logging.ERROR,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger("CrewAIAssistant")
+logger = logging.getLogger("OmniCortex")
 
 # ----------------- AUTHENTICATION HANDLING -----------------
 # For Streamlit Community Cloud Deployment
 if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") or not os.path.exists(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "bq-key.json")):
     if "gcp_service_account" in st.secrets:
-        # Reconstruct the bq-key.json file from Streamlit secrets
         with open("bq-key.json", "w") as f:
             f.write(json.dumps(dict(st.secrets["gcp_service_account"])))
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "bq-key.json"
@@ -28,49 +23,101 @@ if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") or not os.path.exists(os
     else:
         st.error("BigQuery Key missing! Please authenticate.")
 
-# Set GROQ Key for Streamlit Cloud
-if not os.environ.get("GROQ_API_KEY") and "GROQ_API_KEY" in st.secrets:
-    os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
+# Set Google API Key for Streamlit Cloud
+if not os.environ.get("GOOGLE_API_KEY") and "GOOGLE_API_KEY" in st.secrets:
+    os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
 
 # ----------------- UI / DESIGN SETUP -----------------
-st.set_page_config(page_title="Intelligent Investor AI", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(
+    page_title="OmniCortex AI | Quant Committee",
+    page_icon="🏛️",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
 
-    /* Pure dark mode background */
+    /* ============ CORE DARK THEME ============ */
     .stApp {
-        background-color: #0b0f19 !important;
+        background: linear-gradient(180deg, #080c14 0%, #0d1117 50%, #0b0f19 100%) !important;
         color: #e6edf3 !important;
-        font-family: 'Inter', sans-serif !important;
+        font-family: 'Inter', -apple-system, sans-serif !important;
     }
-    
-    /* Clean Minimal Header */
+
+    /* ============ HEADER STYLING ============ */
     .omni-header {
         font-family: 'Inter', sans-serif;
-        font-size: 2.8rem;
+        font-size: 3.2rem;
         font-weight: 700;
         text-align: center;
-        background: -webkit-linear-gradient(45deg, #4da8da, #007cc7);
+        background: linear-gradient(135deg, #58a6ff 0%, #1f6feb 40%, #8b5cf6 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        margin-top: 2rem;
+        background-clip: text;
+        margin-top: 1.5rem;
         margin-bottom: 0px;
-        letter-spacing: -1px;
-    }
-    
-    .omni-subheader {
-        font-family: 'Inter', sans-serif;
-        color: #6e7681;
-        text-align: center;
-        margin-bottom: 4rem;
-        font-size: 1.1rem;
-        font-weight: 400;
+        letter-spacing: -1.5px;
     }
 
-    /* ---------------- SLEEK AI CHAT STYLING ---------------- */
-    /* Remove all box borders and hard backgrounds for a fluid, continuous chat interface */
+    .omni-subheader {
+        font-family: 'JetBrains Mono', monospace;
+        color: #6e7681;
+        text-align: center;
+        margin-bottom: 0.5rem;
+        font-size: 0.85rem;
+        font-weight: 400;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+
+    .omni-tagline {
+        font-family: 'Inter', sans-serif;
+        color: #484f58;
+        text-align: center;
+        margin-bottom: 3rem;
+        font-size: 0.75rem;
+        font-style: italic;
+    }
+
+    /* ============ STATUS INDICATOR ============ */
+    .status-bar {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-bottom: 2rem;
+        padding: 0.6rem 1.5rem;
+        background: rgba(22, 27, 34, 0.6);
+        border: 1px solid rgba(48, 54, 61, 0.5);
+        border-radius: 12px;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .status-item {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        color: #8b949e;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .status-dot.green { background: #3fb950; box-shadow: 0 0 6px #3fb950; }
+    .status-dot.blue { background: #58a6ff; box-shadow: 0 0 6px #58a6ff; }
+    .status-dot.purple { background: #8b5cf6; box-shadow: 0 0 6px #8b5cf6; }
+
+    /* ============ CHAT STYLING ============ */
     [data-testid="stChatMessageContent"] {
         background-color: transparent !important;
         border: none !important;
@@ -78,102 +125,156 @@ st.markdown("""
         padding: 0 !important;
         padding-top: 0.2rem !important;
     }
-    
-    /* Subtle separation between messages */
+
     [data-testid="stChatMessage"] {
         padding: 1.5rem 0 !important;
-        border-bottom: 1px solid rgba(255,255,255, 0.05);
+        border-bottom: 1px solid rgba(255,255,255, 0.04);
     }
-    
-    /* Beautiful Typography for the chat text */
+
+    /* Chat Typography */
     .stChatMessage .stMarkdown p {
         font-family: 'Inter', sans-serif !important;
-        font-size: 1.25rem !important; /* Huge readability boost */
-        line-height: 1.75 !important;
-        color: #ECECEC !important;
+        font-size: 1.15rem !important;
+        line-height: 1.8 !important;
+        color: #e6edf3 !important;
         font-weight: 400 !important;
     }
-    
+
     .stChatMessage .stMarkdown li {
         font-family: 'Inter', sans-serif !important;
-        font-size: 1.2rem !important;
+        font-size: 1.1rem !important;
         line-height: 1.7 !important;
-        color: #D4D4D4 !important;
-        margin-bottom: 0.6rem;
+        color: #d4d4d4 !important;
+        margin-bottom: 0.5rem;
     }
-    
+
     .stChatMessage .stMarkdown strong {
-        color: #FFFFFF !important;
+        color: #ffffff !important;
         font-weight: 600 !important;
     }
-    
-    /* Chat Input Bar Styling */
+
+    .stChatMessage .stMarkdown h3 {
+        font-family: 'Inter', sans-serif !important;
+        color: #58a6ff !important;
+        font-size: 1.3rem !important;
+        border-bottom: 1px solid rgba(88, 166, 255, 0.15);
+        padding-bottom: 0.5rem;
+        margin-top: 1.5rem;
+    }
+
+    /* Persona section styling */
+    .stChatMessage .stMarkdown h3 + p strong:first-child {
+        color: #58a6ff !important;
+    }
+
+    /* Code blocks in chat (for error traces) */
+    .stChatMessage .stMarkdown code {
+        font-family: 'JetBrains Mono', monospace !important;
+        background: rgba(22, 27, 34, 0.8) !important;
+        color: #79c0ff !important;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+    }
+
+    /* Chat Input Bar */
     [data-testid="stChatInput"] {
-        border-radius: 20px !important;
+        border-radius: 16px !important;
         border: 1px solid #30363d !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important;
+        background: rgba(13, 17, 23, 0.8) !important;
+    }
+
+    [data-testid="stChatInput"] textarea {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 1rem !important;
+        color: #e6edf3 !important;
+    }
+
+    /* Spinner */
+    .stSpinner > div {
+        border-top-color: #58a6ff !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("<h1 class='omni-header'>OmniCortex AI</h1>", unsafe_allow_html=True)
-st.markdown("<p class='omni-subheader'>Advanced Quantitative Analysis Engine</p>", unsafe_allow_html=True)
+# Header
+st.markdown("<h1 class='omni-header'>OmniCortex</h1>", unsafe_allow_html=True)
+st.markdown("<p class='omni-subheader'>Quant Committee • PSX & MUFAP</p>", unsafe_allow_html=True)
+st.markdown("<p class='omni-tagline'>\"Ruthless Quantitative Analysis over Conversational Hype.\"</p>", unsafe_allow_html=True)
+
+# Status Bar
+st.markdown("""
+<div class="status-bar">
+    <span class="status-item"><span class="status-dot green"></span> BigQuery Connected</span>
+    <span class="status-item"><span class="status-dot blue"></span> Gemini 3.1 Flash-Lite</span>
+    <span class="status-item"><span class="status-dot purple"></span> Graham Protocol Active</span>
+</div>
+""", unsafe_allow_html=True)
 
 # ----------------- CHAT UI / MEMORY SETUP -----------------
-# Initialize chat history memory
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Welcome to **OmniCortex**, your elite quantitative AI for the Pakistan Market.\n\nAsk me anything! For example:\n- *What are the current metrics for MEBL.KA?*\n- *Any latest news on the State Bank of Pakistan?*\n- *What is the margin of safety for Mutual Fund X?*"}
+        {
+            "role": "assistant",
+            "content": (
+                "### 🏛️ OmniCortex Online\n\n"
+                "The Investment Committee is assembled. All four seats are occupied.\n\n"
+                "**Available Commands:**\n"
+                "- `Analyze MEBL.KA` — Full 4-agent debate on Meezan Bank\n"
+                "- `Analyze HUBC.KA` — Hub Power Company deep dive\n"
+                "- `What's the KSE-100 doing today?` — Live macro scan\n"
+                "- `[Any MUFAP Fund Name]` — Mutual fund Graham analysis\n\n"
+                "State your query. The Committee awaits."
+            )
+        }
     ]
 
-# Display chat messages from history on app rerun
+# Display chat history
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# ----------------- CONVERSATIONAL AI BRAIN -----------------
-# Lazy load the brain
+# ----------------- BRAIN LOADER -----------------
 @st.cache_resource
 def load_brain():
     from core_brain import get_omnicortex_brain
     return get_omnicortex_brain()
 
-# React to user input
-if prompt := st.chat_input("Talk with OmniCortex... (e.g. Analyze HUBC.KA)"):
-    # Display user message in chat message container
+# ----------------- CHAT INPUT HANDLER -----------------
+if prompt := st.chat_input("Query the Committee... (e.g., Analyze ENGRO.KA)"):
+    # Display user message
     st.chat_message("user").markdown(prompt)
-    # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    # Display assistant response in chat message container
+    # Generate response
     with st.chat_message("assistant"):
-        with st.spinner("OmniCortex is thinking (and checking exact SQL/News data)..."):
+        with st.spinner("⚙️ Committee in session — fetching SQL metrics and scanning live markets..."):
             try:
                 brain = load_brain()
                 
-                # We need to pass the conversation history properly
-                from langchain_core.messages import HumanMessage, AIMessage
+                # Build message list using simple dict format (no LangChain needed)
                 chat_history = []
-                for msg in st.session_state.messages[:-1]: # Don't include the immediate prompt, it's passed as 'input'
-                    if msg["role"] == "user":
-                        chat_history.append(HumanMessage(content=msg["content"]))
-                    elif msg["role"] == "assistant":
-                        chat_history.append(AIMessage(content=msg["content"]))
+                for msg in st.session_state.messages[:-1]:
+                    chat_history.append({
+                        "role": msg["role"] if msg["role"] == "user" else "assistant",
+                        "content": msg["content"]
+                    })
                 
-                # Fetch the intelligent response from Langgraph core
-                response = brain.invoke(
-                    {"messages": chat_history + [HumanMessage(content=prompt)]}
-                )
+                # Add the current user message
+                chat_history.append({"role": "user", "content": prompt})
+                
+                # Invoke the brain
+                response = brain.invoke({"messages": chat_history})
                 
                 ai_reply = response["messages"][-1].content
                 st.markdown(ai_reply)
                 
-                # Add assistant response to chat history
+                # Save to session
                 st.session_state.messages.append({"role": "assistant", "content": ai_reply})
                 
             except Exception as e:
                 error_trace = traceback.format_exc()
-                logger.error("OmniCortex crashed with traceback:\n%s", error_trace)
-                st.error(f"Execution Error: {str(e)}")
-                st.markdown(f"**Detailed AI Logger:**\n```python\n{error_trace}\n```")
-
+                logger.error("OmniCortex crashed:\n%s", error_trace)
+                st.error(f"⚠️ Pipeline Error: {str(e)}")
+                st.markdown(f"**System Trace:**\n```\n{error_trace}\n```")
