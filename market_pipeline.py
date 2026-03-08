@@ -51,16 +51,24 @@ def load_to_bigquery(dataframe, table_id):
     print(f"Successfully loaded {len(dataframe)} rows to BigQuery.")
 
 if __name__ == "__main__":
-    # Define your project.dataset.table
-    # REPLACE 'pk-market-data' with your actual Google Cloud Project ID if different
-    BQ_TABLE_ID = "pk-market-data.market_data.psx_daily_equities"
-    
-    # Run the pipeline for Meezan Bank
-    meezan_data = fetch_psx_data("MEBL")
-    
-    # KSE100 pipeline
-    kse_data = fetch_psx_data("KSE100")
-    
-    # Push to the database
-    load_to_bigquery(meezan_data, BQ_TABLE_ID)
-    load_to_bigquery(kse_data, BQ_TABLE_ID)
+    try:
+        # Define your project.dataset.table
+        # REPLACE 'pk-market-data' with your actual Google Cloud Project ID if different
+        BQ_TABLE_ID = "pk-market-data.market_data.psx_daily_equities"
+        
+        # Run the pipeline for Meezan Bank
+        meezan_data = fetch_psx_data("MEBL")
+        
+        # KSE100 pipeline
+        kse_data = fetch_psx_data("KSE100")
+        
+        # Push to the database
+        load_to_bigquery(meezan_data, BQ_TABLE_ID)
+        load_to_bigquery(kse_data, BQ_TABLE_ID)
+    except Exception as e:
+        import logging
+        logging.basicConfig(filename='etl_errors.log', level=logging.ERROR, format='%(asctime)s - %(message)s')
+        
+        error_msg = f"tvDatafeed Pipeline Failed: {str(e)}"
+        print(error_msg)
+        logging.error(error_msg)

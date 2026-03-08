@@ -95,6 +95,16 @@ def load_to_bigquery(dataframe, table_id):
     print(f"Successfully loaded {len(dataframe)} rows to BigQuery.")
 
 if __name__ == "__main__":
-    BQ_TABLE_ID = "pk-market-data.market_data.mufap_daily_nav"
-    mufap_df = fetch_mufap_data()
-    load_to_bigquery(mufap_df, BQ_TABLE_ID)
+    try:
+        BQ_TABLE_ID = "pk-market-data.market_data.mufap_daily_nav"
+        mufap_df = fetch_mufap_data()
+        if mufap_df is None:
+            raise Exception("fetch_mufap_data returned None, cloudscraper failed.")
+        load_to_bigquery(mufap_df, BQ_TABLE_ID)
+    except Exception as e:
+        import logging
+        logging.basicConfig(filename='etl_errors.log', level=logging.ERROR, format='%(asctime)s - %(message)s')
+        
+        error_msg = f"MUFAP ETL Pipeline Failed: {str(e)}"
+        print(error_msg)
+        logging.error(error_msg)

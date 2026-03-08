@@ -37,48 +37,49 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap');
 
     /* ============ CORE DARK THEME ============ */
     .stApp {
-        background: linear-gradient(180deg, #080c14 0%, #0d1117 50%, #0b0f19 100%) !important;
+        background: #0a0a0a !important; /* Deep space black */
         color: #e6edf3 !important;
-        font-family: 'Inter', -apple-system, sans-serif !important;
+        font-family: 'Roboto Mono', monospace !important;
     }
 
     /* ============ HEADER STYLING ============ */
     .omni-header {
-        font-family: 'Inter', sans-serif;
-        font-size: 3.2rem;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 3.5rem;
         font-weight: 700;
         text-align: center;
-        background: linear-gradient(135deg, #58a6ff 0%, #1f6feb 40%, #8b5cf6 100%);
+        background: linear-gradient(135deg, #00ffcc 0%, #0abfbc 40%, #ff00ff 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
         margin-top: 1.5rem;
         margin-bottom: 0px;
-        letter-spacing: -1.5px;
+        letter-spacing: 2px;
+        text-shadow: 0 0 10px rgba(0, 255, 204, 0.4);
     }
 
     .omni-subheader {
-        font-family: 'JetBrains Mono', monospace;
-        color: #6e7681;
+        font-family: 'Roboto Mono', monospace;
+        color: #00ffcc;
         text-align: center;
         margin-bottom: 0.5rem;
         font-size: 0.85rem;
-        font-weight: 400;
-        letter-spacing: 2px;
+        font-weight: 500;
+        letter-spacing: 3px;
         text-transform: uppercase;
     }
 
     .omni-tagline {
-        font-family: 'Inter', sans-serif;
-        color: #484f58;
+        font-family: 'Roboto Mono', monospace;
+        color: #aaaaaa;
         text-align: center;
         margin-bottom: 3rem;
-        font-size: 0.75rem;
+        font-size: 0.8rem;
         font-style: italic;
     }
 
@@ -89,33 +90,35 @@ st.markdown("""
         gap: 2rem;
         margin-bottom: 2rem;
         padding: 0.6rem 1.5rem;
-        background: rgba(22, 27, 34, 0.6);
-        border: 1px solid rgba(48, 54, 61, 0.5);
-        border-radius: 12px;
+        background: rgba(17, 17, 17, 0.8);
+        border: 1px solid #00ffcc;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 255, 204, 0.2);
         max-width: 600px;
         margin-left: auto;
         margin-right: auto;
     }
 
     .status-item {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.7rem;
-        color: #8b949e;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 0.75rem;
+        color: #dddddd;
         display: flex;
         align-items: center;
         gap: 0.4rem;
+        letter-spacing: 1px;
     }
 
     .status-dot {
-        width: 6px;
-        height: 6px;
+        width: 8px;
+        height: 8px;
         border-radius: 50%;
         display: inline-block;
     }
 
-    .status-dot.green { background: #3fb950; box-shadow: 0 0 6px #3fb950; }
-    .status-dot.blue { background: #58a6ff; box-shadow: 0 0 6px #58a6ff; }
-    .status-dot.purple { background: #8b5cf6; box-shadow: 0 0 6px #8b5cf6; }
+    .status-dot.green { background: #39ff14; box-shadow: 0 0 8px #39ff14; }
+    .status-dot.blue { background: #00ffcc; box-shadow: 0 0 8px #00ffcc; }
+    .status-dot.purple { background: #ff00ff; box-shadow: 0 0 8px #ff00ff; }
 
     /* ============ CHAT STYLING ============ */
     [data-testid="stChatMessageContent"] {
@@ -133,62 +136,71 @@ st.markdown("""
 
     /* Chat Typography */
     .stChatMessage .stMarkdown p {
-        font-family: 'Inter', sans-serif !important;
-        font-size: 1.15rem !important;
-        line-height: 1.8 !important;
-        color: #e6edf3 !important;
+        font-family: 'Roboto Mono', monospace !important;
+        font-size: 1rem !important;
+        line-height: 1.6 !important;
+        color: #ffffff !important;
         font-weight: 400 !important;
     }
 
     .stChatMessage .stMarkdown li {
-        font-family: 'Inter', sans-serif !important;
-        font-size: 1.1rem !important;
-        line-height: 1.7 !important;
-        color: #d4d4d4 !important;
+        font-family: 'Roboto Mono', monospace !important;
+        font-size: 0.95rem !important;
+        line-height: 1.5 !important;
+        color: #cccccc !important;
         margin-bottom: 0.5rem;
     }
 
     .stChatMessage .stMarkdown strong {
-        color: #ffffff !important;
+        color: #00ffcc !important;
         font-weight: 600 !important;
     }
 
     .stChatMessage .stMarkdown h3 {
-        font-family: 'Inter', sans-serif !important;
-        color: #58a6ff !important;
+        font-family: 'Orbitron', sans-serif !important;
+        color: #00ffcc !important;
         font-size: 1.3rem !important;
-        border-bottom: 1px solid rgba(88, 166, 255, 0.15);
+        border-bottom: 1px solid rgba(0, 255, 204, 0.3);
         padding-bottom: 0.5rem;
         margin-top: 1.5rem;
+        text-shadow: 0 0 5px rgba(0, 255, 204, 0.5);
     }
 
     /* Persona section styling */
     .stChatMessage .stMarkdown h3 + p strong:first-child {
-        color: #58a6ff !important;
+        color: #ff00ff !important;
     }
 
     /* Code blocks in chat (for error traces) */
     .stChatMessage .stMarkdown code {
-        font-family: 'JetBrains Mono', monospace !important;
-        background: rgba(22, 27, 34, 0.8) !important;
-        color: #79c0ff !important;
-        padding: 2px 6px;
+        font-family: 'Roboto Mono', monospace !important;
+        background: rgba(17, 17, 17, 0.9) !important;
+        color: #39ff14 !important;
+        padding: 4px 8px;
         border-radius: 4px;
         font-size: 0.85rem;
+        border: 1px solid #333;
     }
 
-    /* Chat Input Bar */
+    /* Chat Input Bar and Bug Fix */
     [data-testid="stChatInput"] {
-        border-radius: 16px !important;
-        border: 1px solid #30363d !important;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important;
-        background: rgba(13, 17, 23, 0.8) !important;
+        border-radius: 8px !important;
+        border: 1px solid #00ffcc !important;
+        box-shadow: 0 0 15px rgba(0, 255, 204, 0.2) !important;
+        background: #111111 !important;
     }
 
-    [data-testid="stChatInput"] textarea {
-        font-family: 'Inter', sans-serif !important;
+    /* Fix for invisible text in Streamlit input */
+    div[data-testid="stChatInput"] textarea, [data-testid="stChatInput"] textarea::placeholder {
+        font-family: 'Roboto Mono', monospace !important;
         font-size: 1rem !important;
-        color: #e6edf3 !important;
+        color: #00ffcc !important; 
+        -webkit-text-fill-color: #00ffcc !important;
+        background-color: transparent !important;
+    }
+    
+    [data-testid="stChatInput"] svg {
+        fill: #ff00ff !important;
     }
 
     /* Spinner */
@@ -233,7 +245,32 @@ if "messages" not in st.session_state:
 # Display chat history
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+        if message["role"] == "assistant":
+            try:
+                payload = json.loads(message["content"])
+                with st.container():
+                    col1, col2 = st.columns([3, 1])
+                    with col1:
+                        st.markdown("### 🏛️ Committee Synthesis")
+                        st.info(f"**Graham Analysis:** {payload.get('graham_analysis')}")
+                        st.warning(f"**Macro Analysis:** {payload.get('macro_analysis')}")
+                        st.error(f"**Risk Assessment:** {payload.get('risk_assessment')}")
+                    with col2:
+                        verdict = payload.get('verdict', 'HOLD').upper()
+                        v_color = "#3fb950" if "BUY" in verdict else ("#f85149" if "SELL" in verdict else "#d29922")
+                        st.markdown(f'''
+                        <div style="background: rgba(22, 27, 34, 0.8); padding: 20px; border-radius: 10px; border: 1px solid #30363d; text-align: center;">
+                            <h4 style="color: #8b949e; margin-bottom: 5px; font-family: 'JetBrains Mono', monospace;">VERDICT</h4>
+                            <h2 style="color: {v_color}; margin: 0; font-family: 'Inter', sans-serif;">{verdict}</h2>
+                            <hr style="border-color: #30363d; margin: 15px 0;">
+                            <h4 style="color: #8b949e; margin-bottom: 5px; font-family: 'JetBrains Mono', monospace;">CONFIDENCE</h4>
+                            <h2 style="color: #58a6ff; margin: 0; font-family: 'Inter', sans-serif;">{payload.get('confidence_score')}%</h2>
+                        </div>
+                        ''', unsafe_allow_html=True)
+            except json.JSONDecodeError:
+                st.markdown(message["content"])
+        else:
+            st.markdown(message["content"])
 
 # ----------------- BRAIN LOADER -----------------
 @st.cache_resource
@@ -268,7 +305,31 @@ if prompt := st.chat_input("Query the Committee... (e.g., Analyze ENGRO.KA)"):
                 response = brain.invoke({"messages": chat_history})
                 
                 ai_reply = response["messages"][-1].content
-                st.markdown(ai_reply)
+                
+                try:
+                    payload = json.loads(ai_reply)
+                    with st.container():
+                        col1, col2 = st.columns([3, 1])
+                        with col1:
+                            st.markdown("### 🏛️ Committee Synthesis")
+                            st.info(f"**Graham Analysis:** {payload.get('graham_analysis')}")
+                            st.warning(f"**Macro Analysis:** {payload.get('macro_analysis')}")
+                            st.error(f"**Risk Assessment:** {payload.get('risk_assessment')}")
+                        with col2:
+                            verdict = payload.get('verdict', 'HOLD').upper()
+                            v_color = "#3fb950" if "BUY" in verdict else ("#f85149" if "SELL" in verdict else "#d29922")
+                            st.markdown(f"""
+                            <div style="background: rgba(22, 27, 34, 0.8); padding: 20px; border-radius: 10px; border: 1px solid #30363d; text-align: center;">
+                                <h4 style="color: #8b949e; margin-bottom: 5px; font-family: 'JetBrains Mono', monospace;">VERDICT</h4>
+                                <h2 style="color: {v_color}; margin: 0; font-family: 'Inter', sans-serif;">{verdict}</h2>
+                                <hr style="border-color: #30363d; margin: 15px 0;">
+                                <h4 style="color: #8b949e; margin-bottom: 5px; font-family: 'JetBrains Mono', monospace;">CONFIDENCE</h4>
+                                <h2 style="color: #58a6ff; margin: 0; font-family: 'Inter', sans-serif;">{payload.get('confidence_score')}%</h2>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                except json.JSONDecodeError:
+                    st.markdown(ai_reply)
                 
                 # Save to session
                 st.session_state.messages.append({"role": "assistant", "content": ai_reply})

@@ -53,6 +53,13 @@ def create_mufap_view():
             WHERE NAV IS NOT NULL AND NAV > 0
               AND Date <= DATE_SUB(CURRENT_DATE(), INTERVAL 29 DAY)
         ) b ON a.Fund_Name = b.Fund_Name AND b.rn = 1
+    ),
+    macro AS (
+        SELECT SBP_Rate 
+        FROM `pk-market-data.market_data.macro_indicators` 
+        WHERE Indicator_Name = 'SBP_Policy_Rate'
+        ORDER BY Date DESC 
+        LIMIT 1
     )
     SELECT 
         l.Date,
@@ -69,15 +76,16 @@ def create_mufap_view():
         -- Annualized Return (from 30-day growth)
         ROUND((POWER(1 + ((l.NAV - NULLIF(m.nav_30d_value, 0)) / NULLIF(m.nav_30d_value, 0)), 12) - 1) * 100, 4) AS annualized_return_from_mom,
         
-        -- Graham Filter: Does annualized return beat 22% SBP Risk-Free rate?
+        -- Graham Filter: Does annualized return beat SBP Risk-Free rate?
         CASE 
-            WHEN ROUND((POWER(1 + ((l.NAV - NULLIF(m.nav_30d_value, 0)) / NULLIF(m.nav_30d_value, 0)), 12) - 1) * 100, 4) > 22.0 THEN True 
+            WHEN ROUND((POWER(1 + ((l.NAV - NULLIF(m.nav_30d_value, 0)) / NULLIF(m.nav_30d_value, 0)), 12) - 1) * 100, 4) > (SELECT SBP_Rate FROM macro) THEN True 
             ELSE False 
-        END AS beats_sbp_22pct
+        END AS beats_sbp_rate
         
     FROM latest l
     LEFT JOIN nav_7d w ON l.Fund_Name = w.Fund_Name
     LEFT JOIN nav_30d m ON l.Fund_Name = m.Fund_Name
+    CROSS JOIN macro
     """
     
     try:
